@@ -7,7 +7,7 @@ Run bash script to get Screen capture and ViewTree info and display it in Browse
 
 Started a server linstening port 8081.
 
-The Demo is [<img src="effect.png">]
+The Demo is <img src="effect.jpg">
 
 by JavaScript.
 
