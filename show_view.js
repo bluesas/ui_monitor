@@ -21,8 +21,6 @@ var meshs = []; // saved by level
 var composer, outlinePass;
 
 // click
-var raycaster = new THREE.Raycaster();
-var mouse = new THREE.Vector2();
 var moved = false;
 
 var selectedObjects;
@@ -32,6 +30,7 @@ var levelMeshs = [];
 var displayed = false;
 
 var moved = false;
+var blow = false;
 
 init();
 
@@ -102,11 +101,13 @@ function init() {
     renderer.domElement.addEventListener('mouseup', function (event) {
         if (!moved) {
 
-            // if (animateCount < animateLength) {
-            // animateViewMove();
-            // } else {
-            changeTarget(event);
-            // }
+            if (xAnimate < xAnimateTotal
+                || yAnimate < yAnimateTotal
+                || zAnimate < zAnimateTotal) {
+                animateViewMove();
+            } else {
+                changeTarget(event);
+            }
         }
     }, false);
 
@@ -156,6 +157,11 @@ function changeTarget(event) {
 
 function animate() {
     requestAnimationFrame(animate);
+
+    if (blow) {
+        animateMoveStep();
+    }
+
     render();
 }
 
@@ -293,43 +299,9 @@ function showView(rootNode, material) {
     }
 
     if (totalLevels > 0) {
-
-        var totalZ = totalLevels * zSpace;
-        zOffset = - 0.45 * totalZ;
-        controls.minDistance = zOffset;
-        controls.maxDistance = totalZ + 5000;
-
-        levelMeshs.forEach(function (levelMesh) {
-            levelMesh.position.z = levelMesh.position.z + zOffset;
-        }, this);
-        meshs.forEach(function (level) {
-            level.forEach(function (nodeMesh) {
-                nodeMesh.position.z = nodeMesh.position.z + zOffset;
-            }, this);
-        }, this);
+        refreshZ();
     }
 
-}
-
-var animateCount = 0;
-var animateLength = 3000;
-function animateViewMove() {
-    animateCount++;
-
-    meshs.forEach(function (levelMesh) {
-        levelMesh.forEach(function (mesh) {
-            var currentPos = mesh.position.clone();
-            var targetPos = mesh.targetPosition.clone();
-            mesh.position.add(targetPos.sub(currentPos).addScalar(animateCount / animateLength));
-
-            mesh.position.needsUpdate = true;
-
-        }, this);
-    }, this);
-
-    if (animateCount <= animateLength) {
-        requestAnimationFrame(animateViewMove);
-    }
 }
 
 function showNode(node, material) {
@@ -355,11 +327,127 @@ function showNode(node, material) {
     levelMeshs.push(mesh);
 
     // 设置扩散
-    mesh.position.x = (mesh.bounds[0] + mesh.bounds[2] - totalWidth) / 2 * scatter;
-    mesh.position.y = (mesh.bounds[1] + mesh.bounds[3] - totalHeight) / 2 * scatter;
+    var originalX = (mesh.bounds[0] + mesh.bounds[2] - totalWidth) / 2;
+    var originalY = (mesh.bounds[1] + mesh.bounds[3] - totalHeight) / 2
+    var x = originalX * scatter;
+    var y = originalY * scatter;
+    var z = getZ(node.__level) + levelMeshs.length * sameLevelSpace;
 
-    mesh.position.z = getZ(node.__level) + levelMeshs.length * sameLevelSpace;
+    mesh.targetPosition = new THREE.Vector3(x, y, z);
+    mesh.position.x = originalX;
+    mesh.position.y = originalY;
+
     mesh.node = node;
     scene.add(mesh);
 
+}
+
+function refreshZ() {
+    var totalZ = totalLevels * zSpace;
+    zOffset = - 0.45 * totalZ;
+    controls.minDistance = zOffset;
+    controls.maxDistance = totalZ + 5000;
+
+    levelMeshs.forEach(function (levelMesh) {
+        levelMesh.position.z = levelMesh.position.z + zOffset;
+    }, this);
+
+    doForEachMesh(function (mesh) {
+        mesh.position.z = mesh.position.z + zOffset;
+        mesh.targetPosition.z = mesh.targetPosition.z + zOffset;
+    })
+
+}
+
+
+var zBlowed = false;
+
+var currPos;
+var targetPos;
+function animateMoveStep() {
+
+    if (zBlowed) {
+
+        doForEachMesh(animateMoveX, xAnimate, xAnimateTotal);
+        doForEachMesh(animateMoveY, yAnimate, yAnimateTotal);
+        xAnimate++;
+        yAnimate++;
+        if (xAnimate >= xAnimateTotal && yAnimate >= yAnimateTotal) {
+            blow = false;
+        }
+
+    } else {
+        doForEachMesh(animateMoveZ, zAnimate, zAnimateTotal);
+        zAnimate++;
+        if (zAnimate >= zAnimateTotal) {
+            zBlowed = true;
+        }
+    }
+
+}
+
+function isFunction(functionToCheck) {
+ var getType = {};
+ return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
+function doForEachMesh() {
+
+    var action = arguments[0];
+    if (!isFunction(action)) {
+        return;
+    }
+
+    var level;
+    for (var i = 0; i < meshs.length; i++) {
+        level = meshs[i];
+        for (var j = 0; j < level.length; j++) {
+            var ar = [meshs[i][j]];
+            for(var ai = 1; ai < arguments.length; ai++) {
+                ar.push(arguments[ai]);
+            }
+            action.apply(this, ar);
+        }
+    }
+}
+
+function animateMoveX(mesh, step, total) {
+
+    mesh.position.x += getStepDistance(mesh.targetPosition.x, mesh.position.x, step, total);
+    mesh.position.needsUpdate = true;
+
+}
+
+function animateMoveY(mesh, step, total) {
+
+    mesh.position.y += getStepDistance(mesh.targetPosition.y, mesh.position.y, step, total);
+    mesh.position.needsUpdate = true;
+
+}
+
+function animateMoveZ(mesh, step, total) {
+
+    mesh.position.z += getStepDistance(mesh.targetPosition.z, mesh.position.z, step, total);
+    mesh.position.needsUpdate = true;
+
+}
+
+function getStepDistance(target, current, step, total) {
+
+    var dis = (target - current) / (total - step + 1);
+
+    if (isNaN(dis)) {
+        return 0;
+    }
+    return dis;
+}
+
+var zAnimate = 0;
+var zAnimateTotal = 100;
+var xAnimate = 0;
+var xAnimateTotal = 30;
+var yAnimate = 0;
+var yAnimateTotal = 30;
+function animateViewMove() {
+    blow = true;
 }
