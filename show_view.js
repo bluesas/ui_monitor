@@ -89,6 +89,8 @@ function init() {
 
     });
 
+    window.document.getElementById("reset_btn").onclick = resetTarget;
+
     window.addEventListener('resize', onWindowResize, false);
 
     renderer.domElement.addEventListener('mousedown', function () {
@@ -103,7 +105,7 @@ function init() {
             // if (animateCount < animateLength) {
             // animateViewMove();
             // } else {
-            onClick(event);
+            changeTarget(event);
             // }
         }
     }, false);
@@ -116,11 +118,11 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function reset() {
+function resetTarget() {
     controls.target.set(0, 0, 0);
 }
 
-function onClick(event) {
+function changeTarget(event) {
 
     var vector = new THREE.Vector3();
 
@@ -166,10 +168,7 @@ function render() {
 // 从 android 坐标系变成 uv 坐标系
 // android 坐标系 是 
 // o 
-//   ┌--------------> x
-//   | 
-//   |
-//   |
+//   ┌-----> x
 //   |
 //   |
 // y ∨
@@ -178,10 +177,7 @@ function render() {
 // y ∧
 //   | 
 //   |
-//   |
-//   |
-//   |
-//   └--------------> x
+//   └-----> x
 // o
 function androidRect2UVRect(x1, y1, x2, y2, totalWidth, totalHeight) {
     var uvX1 = x1;
