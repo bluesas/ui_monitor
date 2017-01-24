@@ -19,8 +19,8 @@ function sendFile(req, res) {
 
 function treeViewProcess(req, res) {
 
-    viewLoader.loadViewTree("./viewtree.xml");
-    viewLoader.loadScreen("./src/image/screencap.png");
+    viewLoader.loadViewTree("./res/viewtree.xml");
+    viewLoader.loadScreen("./res/screencap.png");
 
     xml.toJson('viewtree.xml', function (result) {
         res.render('tree_view_demo', { title: 'Android UI Monitor', message: 'Android UI Monitor', viewTreeData: JSON.stringify(result) });
