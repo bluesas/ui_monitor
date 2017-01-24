@@ -65,7 +65,7 @@ function init() {
     };
 
     var loader = new THREE.TextureLoader();
-    loader.load('image/screencap.png', function (texture) {
+    loader.load('screencap.png', function (texture) {
 
         if (viewTreeData === null && viewTreeData === undefined) {
             return;

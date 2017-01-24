@@ -8,8 +8,8 @@ var router = express.Router();
 
 app.set('view engine', 'jade');
 
+app.use(express.static('res'));
 app.use(express.static('src'));
-
 
 function sendFile(req, res) {
     var filename = req.params.filename
@@ -22,7 +22,7 @@ function treeViewProcess(req, res) {
     viewLoader.loadViewTree("./res/viewtree.xml");
     viewLoader.loadScreen("./res/screencap.png");
 
-    xml.toJson('viewtree.xml', function (result) {
+    xml.toJson('./res/viewtree.xml', function (result) {
         res.render('tree_view_demo', { title: 'Android UI Monitor', message: 'Android UI Monitor', viewTreeData: JSON.stringify(result) });
     })
 }
