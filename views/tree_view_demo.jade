@@ -1,0 +1,16 @@
+html
+  head
+    title!= title
+  body
+    h1!= message
+    button(onclick='reset()', style="width:70px; height:25px; margin-bottom:25px") reset
+
+    script.
+      var viewTreeData = !{viewTreeData};
+    
+    script(src="js/three.min.js")
+    script(src="js/OrbitControls.js")
+    
+    script(src="show_view.js")
+
+    
